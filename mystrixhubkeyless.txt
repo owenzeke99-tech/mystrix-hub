@@ -1,0 +1,323 @@
+-- Services
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+
+local CORRECT_KEY = "MystrixHubKeyJskwo - LaPqpwiwjejLajwjwi"
+local LINK_GET_KEY = "https://link4m.org/PrNd8mC"
+local MAIN_SCRIPT_URL = "https://raw.githubusercontent.com/ummarxfarooq/mystrix-hub/refs/heads/main/loader"
+
+-- File lưu key ẩn 24 giờ
+local SAVE_FILE_NAME = "MystrixHub_KeyCache.json"
+local SESSION_DURATION = 86400 -- 24 giờ tính bằng giây
+
+local function isKeyValid()
+    if readfile and writefile and isfile and isfile(SAVE_FILE_NAME) then
+        local success, data = pcall(function()
+            return HttpService:JSONDecode(readfile(SAVE_FILE_NAME))
+        end)
+        if success and data and data.Key == CORRECT_KEY then
+            if os.time() - (data.Time or 0) < SESSION_DURATION then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function saveKeySession()
+    if writefile then
+        pcall(function()
+            local data = {
+                Key = CORRECT_KEY,
+                Time = os.time()
+            }
+            writefile(SAVE_FILE_NAME, HttpService:JSONEncode(data))
+        end)
+    end
+end
+
+-- Nếu đã lưu key hợp lệ trong vòng 24h thì tự động load thẳng script chính ngầm
+if isKeyValid() then
+    print("Mystrix Hub Authenticated via Saved Session!")
+    pcall(function()
+        loadstring(game:HttpGet(MAIN_SCRIPT_URL))()
+    end)
+    return
+end
+
+-- Cleanup Old UI
+if CoreGui:FindFirstChild("MystrixKeySystem") then
+    CoreGui.MystrixKeySystem:Destroy()
+end
+
+-- Main ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MystrixKeySystem"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Main Container Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 14)
+MainFrame.BackgroundTransparency = 0.05
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.5, -180, 0.5, -125)
+MainFrame.Size = UDim2.new(0, 360, 0, 245)
+MainFrame.ClipsDescendants = true
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 14)
+MainCorner.Parent = MainFrame
+
+-- Neon Red Outer Stroke
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 2
+MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainStroke.Parent = MainFrame
+
+local StrokeGradient = Instance.new("UIGradient")
+StrokeGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 30, 40)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 10, 20)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 30, 40))
+}
+StrokeGradient.Rotation = 45
+StrokeGradient.Parent = MainStroke
+
+-- Background Top Red Glow
+local TopGlow = Instance.new("Frame")
+TopGlow.Name = "TopGlow"
+TopGlow.Parent = MainFrame
+TopGlow.BackgroundColor3 = Color3.fromRGB(255, 0, 30)
+TopGlow.BackgroundTransparency = 0.85
+TopGlow.BorderSizePixel = 0
+TopGlow.Position = UDim2.new(0.5, -100, 0, -50)
+TopGlow.Size = UDim2.new(0, 200, 0, 100)
+
+local GlowCorner = Instance.new("UICorner")
+GlowCorner.CornerRadius = UDim.new(1, 0)
+GlowCorner.Parent = TopGlow
+
+-- Title Header: Mystrix Hub
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Parent = MainFrame
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0, 0, 0, 18)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "Mystrix Hub"
+Title.TextColor3 = Color3.fromRGB(255, 45, 55)
+Title.TextSize = 22
+Title.TextStrokeTransparency = 0.8
+Title.TextStrokeColor3 = Color3.fromRGB(200, 0, 0)
+
+-- Subtitle
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Name = "Subtitle"
+Subtitle.Parent = MainFrame
+Subtitle.BackgroundTransparency = 1
+Subtitle.Position = UDim2.new(0, 0, 0, 46)
+Subtitle.Size = UDim2.new(1, 0, 0, 16)
+Subtitle.Font = Enum.Font.GothamMedium
+Subtitle.Text = "KEY SYSTEM AUTHENTICATION"
+Subtitle.TextColor3 = Color3.fromRGB(150, 150, 160)
+Subtitle.TextSize = 10
+
+-- Modern Floating Notification Banner
+local NotifyBanner = Instance.new("Frame")
+NotifyBanner.Name = "NotifyBanner"
+NotifyBanner.Parent = MainFrame
+NotifyBanner.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+NotifyBanner.BackgroundTransparency = 1
+NotifyBanner.Position = UDim2.new(0.08, 0, 0, 68)
+NotifyBanner.Size = UDim2.new(0.84, 0, 0, 26)
+NotifyBanner.Visible = false
+NotifyBanner.ClipsDescendants = true
+
+local NotifyCorner = Instance.new("UICorner")
+NotifyCorner.CornerRadius = UDim.new(0, 6)
+NotifyCorner.Parent = NotifyBanner
+
+local NotifyStroke = Instance.new("UIStroke")
+NotifyStroke.Color = Color3.fromRGB(50, 50, 65)
+NotifyStroke.Thickness = 1
+NotifyStroke.Parent = NotifyBanner
+
+local NotifyText = Instance.new("TextLabel")
+NotifyText.Name = "NotifyText"
+NotifyText.Parent = NotifyBanner
+NotifyText.BackgroundTransparency = 1
+NotifyText.Size = UDim2.new(1, 0, 1, 0)
+NotifyText.Font = Enum.Font.GothamBold
+NotifyText.Text = ""
+NotifyText.TextColor3 = Color3.fromRGB(255, 255, 255)
+NotifyText.TextSize = 11
+
+-- Input Box Frame
+local BoxContainer = Instance.new("Frame")
+BoxContainer.Name = "BoxContainer"
+BoxContainer.Parent = MainFrame
+BoxContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+BoxContainer.Position = UDim2.new(0.08, 0, 0, 102)
+BoxContainer.Size = UDim2.new(0.84, 0, 0, 42)
+BoxContainer.ClipsDescendants = true
+
+local BoxCorner = Instance.new("UICorner")
+BoxCorner.CornerRadius = UDim.new(0, 8)
+BoxCorner.Parent = BoxContainer
+
+local BoxStroke = Instance.new("UIStroke")
+BoxStroke.Color = Color3.fromRGB(45, 45, 55)
+BoxStroke.Thickness = 1
+BoxStroke.Parent = BoxContainer
+
+local KeyBox = Instance.new("TextBox")
+KeyBox.Name = "KeyBox"
+KeyBox.Parent = BoxContainer
+KeyBox.BackgroundTransparency = 1
+KeyBox.Position = UDim2.new(0.04, 0, 0, 0)
+KeyBox.Size = UDim2.new(0.92, 0, 1, 0)
+KeyBox.Font = Enum.Font.Gotham
+KeyBox.PlaceholderText = "Enter key here..."
+KeyBox.PlaceholderColor3 = Color3.fromRGB(90, 90, 105)
+KeyBox.Text = ""
+KeyBox.TextColor3 = Color3.fromRGB(240, 240, 245)
+KeyBox.TextSize = 12
+KeyBox.TextScaled = false
+KeyBox.TextWrapped = false
+KeyBox.TextXAlignment = Enum.TextXAlignment.Center
+KeyBox.ClearTextOnFocus = false
+
+-- Check Key Button
+local CheckButton = Instance.new("TextButton")
+CheckButton.Name = "CheckButton"
+CheckButton.Parent = MainFrame
+CheckButton.BackgroundColor3 = Color3.fromRGB(210, 25, 40)
+CheckButton.BorderSizePixel = 0
+CheckButton.Position = UDim2.new(0.08, 0, 0, 160)
+CheckButton.Size = UDim2.new(0.4, 0, 0, 42)
+CheckButton.Font = Enum.Font.GothamBold
+CheckButton.Text = "Check Key"
+CheckButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CheckButton.TextSize = 13
+
+local CheckCorner = Instance.new("UICorner")
+CheckCorner.CornerRadius = UDim.new(0, 8)
+CheckCorner.Parent = CheckButton
+
+-- Get Key Button
+local GetKeyButton = Instance.new("TextButton")
+GetKeyButton.Name = "GetKeyButton"
+GetKeyButton.Parent = MainFrame
+GetKeyButton.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+GetKeyButton.BorderSizePixel = 0
+GetKeyButton.Position = UDim2.new(0.52, 0, 0, 160)
+GetKeyButton.Size = UDim2.new(0.4, 0, 0, 42)
+GetKeyButton.Font = Enum.Font.GothamBold
+GetKeyButton.Text = "Get Key"
+GetKeyButton.TextColor3 = Color3.fromRGB(220, 220, 225)
+GetKeyButton.TextSize = 13
+
+local GetCorner = Instance.new("UICorner")
+GetCorner.CornerRadius = UDim.new(0, 8)
+GetCorner.Parent = GetKeyButton
+
+local GetStroke = Instance.new("UIStroke")
+GetStroke.Color = Color3.fromRGB(50, 50, 60)
+GetStroke.Thickness = 1
+GetStroke.Parent = GetKeyButton
+
+-- Button Hover Effects
+local function addHoverAnimation(btn, normalColor, hoverColor)
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = normalColor}):Play()
+    end)
+end
+
+addHoverAnimation(CheckButton, Color3.fromRGB(210, 25, 40), Color3.fromRGB(255, 35, 55))
+addHoverAnimation(GetKeyButton, Color3.fromRGB(28, 28, 35), Color3.fromRGB(40, 40, 50))
+
+-- Floating Banner Notification Logic
+local function showNotification(message, isSuccess)
+    NotifyBanner.Visible = true
+    NotifyBanner.BackgroundTransparency = 1
+    NotifyText.Text = message
+    
+    if isSuccess then
+        NotifyStroke.Color = Color3.fromRGB(50, 230, 110)
+        NotifyText.TextColor3 = Color3.fromRGB(75, 255, 130)
+        TweenService:Create(NotifyBanner, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.2}):Play()
+    else
+        NotifyStroke.Color = Color3.fromRGB(255, 60, 60)
+        NotifyText.TextColor3 = Color3.fromRGB(255, 90, 90)
+        TweenService:Create(NotifyBanner, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.2}):Play()
+    end
+end
+
+-- Smooth Shake Animation
+local originalPosition = MainFrame.Position
+local isShaking = false
+
+local function smoothShake()
+    if isShaking then return end
+    isShaking = true
+    
+    local basePos = originalPosition
+    local intensity = 10
+    local speed = 0.035
+    
+    local shakes = {
+        basePos + UDim2.new(0, intensity, 0, 0),
+        basePos + UDim2.new(0, -intensity * 0.8, 0, 0),
+        basePos + UDim2.new(0, intensity * 0.6, 0, 0),
+        basePos + UDim2.new(0, -intensity * 0.4, 0, 0),
+        basePos
+    }
+    
+    for _, pos in ipairs(shakes) do
+        TweenService:Create(MainFrame, TweenInfo.new(speed, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = pos}):Play()
+        task.wait(speed)
+    end
+    
+    MainFrame.Position = basePos
+    isShaking = false
+end
+
+-- Get Key Logic
+GetKeyButton.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard(LINK_GET_KEY)
+        showNotification("Copied key link to clipboard!", true)
+    else
+        showNotification("Clipboard unsupported by executor.", false)
+    end
+end)
+
+-- Check Key Logic
+CheckButton.MouseButton1Click:Connect(function()
+    if KeyBox.Text == CORRECT_KEY then
+        saveKeySession() -- Lưu key ẩn 24 giờ
+        showNotification("Access Granted! Loading Hub...", true)
+        TweenService:Create(BoxContainer, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(15, 45, 25)}):Play()
+        task.wait(0.9)
+        ScreenGui:Destroy()
+        
+        -- Gọi script chính của bạn sau khi vượt key thành công
+        pcall(function()
+            loadstring(game:HttpGet(MAIN_SCRIPT_URL))()
+        end)
+    else
+        showNotification("Invalid Key! Please try again.", false)
+        KeyBox.Text = "" -- Tự động xóa input box khi sai key
+        smoothShake()
+    end
+end)
